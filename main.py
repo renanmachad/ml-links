@@ -1,9 +1,15 @@
-from webdriver_manager.core.driver import Driver
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from typing import Optional
+import time
 import logging
+import subprocess
+import os
+from typing import Optional
+
+from dotenv import load_dotenv
+from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+
+load_dotenv()
 
 
 class Program:
@@ -12,6 +18,7 @@ class Program:
         self.options = Options()
         self.service: Optional[Service] = None
         self.driver: webdriver.Chrome
+        self.chrome_exec_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
         self._setup_webdriver()
 
     def _setup_webdriver(self) -> None:
@@ -31,8 +38,8 @@ class Program:
             self.options.add_argument("--disable-dev-shm-usage")
 
         self.options.add_argument("--disable-blink-features=AutomationControlled")
-        self.options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        self.options.add_experimental_option("useAutomationExtension", False)
+        # self.options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        # self.options.add_experimental_option("useAutomationExtension", False)
         self.options.add_argument(
             "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
@@ -64,12 +71,33 @@ class Program:
 
         return None
 
+    def _get_user_profile(self) -> str | None:
+        return os.getenv("USER_PROFILE")
+
+    def _init_chrome_debug(self) -> None:
+        """Start debug chrome session with provide user data"""
+
+        command = [
+            self.chrome_exec_path,
+            "--remote-debugging-port=9222",
+            f"--user-data-dir{self._get_user_profile()}",
+        ]
+        subprocess.Popen(command)
+        time.sleep(2)
+        return None
+
     def get_pages(self) -> None:
+        logging.info("Starting Chrome debug")
+        self._init_chrome_debug()
         tabs = self.driver.window_handles
         for tab in tabs:
             logging.info("%s", tab)
 
+    def get_browser_cookies(self) -> None:
+        """Get all cookies from browser session you can filter after that :D"""
+        return None
+
 
 if __name__ == "__main__":
     program = Program(existing_session=True)
-    program.get_pages
+    program.get_pages()
